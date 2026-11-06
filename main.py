@@ -42,3 +42,8 @@ def actualizar_estado(rms):
         led_amarillo.value(0)
         led_rojo.value(0)
         buzzer.value(0)
+while True:
+    valor_rms = calcular_rms()
+    actualizar_estado(valor_rms)
+    print("Nivel RMS:", valor_rms)
+    time.sleep(0.1)
