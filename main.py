@@ -26,24 +26,31 @@ def calcular_rms():
 
     media = suma_cuadrados / MUESTRAS_RMS
     return math.sqrt(media)
-def actualizar_estado(rms):
-    if rms >= UMBRAL_CLIPPING:
+
+
+def actualizar_estado(valor_rms):
+    if valor_rms >= UMBRAL_CLIPPING:
         led_verde.value(0)
         led_amarillo.value(0)
         led_rojo.value(1)
         buzzer.value(1)
-    elif rms >= UMBRAL_ADVERTENCIA:
+        print("ESTADO: CLIPPING (Rojo) | RMS:", int(valor_rms))
+    elif valor_rms >= UMBRAL_ADVERTENCIA:
         led_verde.value(0)
         led_amarillo.value(1)
         led_rojo.value(0)
         buzzer.value(0)
+        print("ESTADO: ADVERTENCIA (Amarillo) | RMS:", int(valor_rms))
     else:
         led_verde.value(1)
         led_amarillo.value(0)
         led_rojo.value(0)
         buzzer.value(0)
+        print("ESTADO: ÓPTIMO (Verde) | RMS:", int(valor_rms))
+
+
+print("Iniciando Asistente de Gain Staging...")
 while True:
-    valor_rms = calcular_rms()
-    actualizar_estado(valor_rms)
-    print("Nivel RMS:", valor_rms)
+    nivel_rms = calcular_rms()
+    actualizar_estado(nivel_rms)
     time.sleep(0.1)
