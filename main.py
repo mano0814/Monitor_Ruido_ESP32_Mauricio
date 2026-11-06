@@ -26,3 +26,19 @@ def calcular_rms():
 
     media = suma_cuadrados / MUESTRAS_RMS
     return math.sqrt(media)
+def actualizar_estado(rms):
+    if rms >= UMBRAL_CLIPPING:
+        led_verde.value(0)
+        led_amarillo.value(0)
+        led_rojo.value(1)
+        buzzer.value(1)
+    elif rms >= UMBRAL_ADVERTENCIA:
+        led_verde.value(0)
+        led_amarillo.value(1)
+        led_rojo.value(0)
+        buzzer.value(0)
+    else:
+        led_verde.value(1)
+        led_amarillo.value(0)
+        led_rojo.value(0)
+        buzzer.value(0)
