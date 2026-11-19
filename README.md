@@ -25,3 +25,13 @@ Ubicada en el directorio `/interfaz`, desarrollada completamente en Python usand
 * Integración del Módulo de Ruido Ambiental.
 * Integración del Módulo de exportación de datos a CSV.
 * Conexión entre el hardware (ESP32) y la interfaz gráfica para la transmisión de datos en tiempo real.
+* ## Estado Actual y Últimos Cambios
+
+### Avances Implementados
+* **Conexión MQTT Modular (`interfaz/cliente_mqtt.py`):** Se desacopló la recepción de datos en tiempo real utilizando `paho-mqtt`, conectada a `broker.hivemq.com` en el tópico `estudio/monitor/gain`.
+* **Calibración del Medidor VU (`interfaz/main_app.py`):** Se ajustó la escala de lectura a valores RMS de 16 bits (`0` a `32768`) con limitador de rango para la aguja, sincronizando el semáforo con los umbrales del ESP32 (`15000` advertencia y `25000` clipping).
+* **Simulador Local de Hardware (`interfaz/simulador_hardware.py`):** Se creó un script independiente que emula el envío de lecturas RMS del microcontrolador vía MQTT para probar el funcionamiento de la interfaz gráfica.
+
+### Problemas Conocidos / Pendientes
+* **Simulación en Wokwi:** El simulador web no inicia la ejecución del proyecto en MicroPython (sin salida en consola). Mientras se soluciona este bloqueo o se pasa al hardware físico (ESP32), las pruebas de visualización se realizan mediante `simulador_hardware.py`.
+* **Módulo de Ruido Ambiental:** Pendiente de implementación e integración en la interfaz gráfica.

@@ -1,5 +1,6 @@
 import tkinter as tk
 from modulo_gain import ModuloGain
+from cliente_mqtt import ControladorMQTT
 
 
 class BotonRedondeado(tk.Canvas):
@@ -54,6 +55,23 @@ class MonitorAudioApp:
 
         self.crear_botones_menu()
 
+        self.mqtt = ControladorMQTT("estudio/monitor/gain", self.procesar_dato_recibido)
+        self.mqtt.iniciar()
+
+    def procesar_dato_recibido(self, valor):
+        if self.modulo_activo == self.modulo_gain:
+            valor_limitado = min(max(valor, 0), 32768)
+            angulo = 180 - (valor_limitado / 32768) * 180
+
+            if valor >= 25000:
+                estado = "rojo"
+            elif valor >= 15000:
+                estado = "amarillo"
+            else:
+                estado = "verde"
+
+            self.root.after(0, self.modulo_gain.actualizar_estado, estado, angulo)
+
     def crear_botones_menu(self):
         self.btn_ambiente = BotonRedondeado(self.frame_menu, text="1. Ruido Ambiental",
                                             command=lambda: self.cambiar_modulo("ambiente"))
@@ -74,10 +92,9 @@ class MonitorAudioApp:
         if nombre_modulo == "gain":
             self.modulo_gain.mostrar()
             self.modulo_activo = self.modulo_gain
-            self.modulo_gain.actualizar_estado("verde", 90)
-
         else:
-            print(f"Preparando la integración para el módulo: {nombre_modulo}...")
+            print(f"Módulo '{nombre_modulo}' no implementado aún.")
+
 
 if __name__ == "__main__":
     ventana = tk.Tk()
