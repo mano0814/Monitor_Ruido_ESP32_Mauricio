@@ -1,6 +1,10 @@
-from machine import Pin, ADC
+import network
 import time
 import math
+from machine import Pin, ADC
+from umqtt.simple import MQTTClient
+
+print("Iniciando sistema...")
 
 mic = ADC(Pin(34))
 mic.atten(ADC.ATTN_11DB)
@@ -13,6 +17,20 @@ buzzer = Pin(27, Pin.OUT)
 UMBRAL_ADVERTENCIA = 15000
 UMBRAL_CLIPPING = 25000
 MUESTRAS_RMS = 100
+
+print("Conectando al WiFi simulado...")
+red = network.WLAN(network.STA_IF)
+red.active(True)
+red.connect('Wokwi-GUEST', '')
+
+while not red.isconnected():
+    time.sleep(0.1)
+print("¡WiFi Conectado!")
+
+print("Conectando al servidor MQTT...")
+cliente = MQTTClient("esp32_sim_audio", "broker.hivemq.com")
+cliente.connect()
+print("¡MQTT Conectado! Empezando a leer el micrófono...")
 
 
 def calcular_rms():
@@ -34,23 +52,24 @@ def actualizar_estado(valor_rms):
         led_amarillo.value(0)
         led_rojo.value(1)
         buzzer.value(1)
-        print("ESTADO: CLIPPING (Rojo) | RMS:", int(valor_rms))
     elif valor_rms >= UMBRAL_ADVERTENCIA:
         led_verde.value(0)
         led_amarillo.value(1)
         led_rojo.value(0)
         buzzer.value(0)
-        print("ESTADO: ADVERTENCIA (Amarillo) | RMS:", int(valor_rms))
     else:
         led_verde.value(1)
         led_amarillo.value(0)
         led_rojo.value(0)
         buzzer.value(0)
-        print("ESTADO: ÓPTIMO (Verde) | RMS:", int(valor_rms))
 
 
-print("Iniciando Asistente de Gain Staging...")
 while True:
     nivel_rms = calcular_rms()
     actualizar_estado(nivel_rms)
+
+    print(f"RMS: {int(nivel_rms)} - Enviando a Python...")
+
+    cliente.publish("estudio/monitor/gain", str(nivel_rms))
+
     time.sleep(0.1)
