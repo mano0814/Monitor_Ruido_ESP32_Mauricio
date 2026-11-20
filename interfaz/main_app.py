@@ -1,5 +1,9 @@
 import tkinter as tk
+import time
+import math
 from modulo_gain import ModuloGain
+from modulo_ambiente import ModuloAmbiente
+from modulo_datos import ModuloDatos
 from cliente_mqtt import ControladorMQTT
 
 
@@ -50,8 +54,13 @@ class MonitorAudioApp:
         self.contenedor_modulos = tk.Frame(self.root, bg="#121212")
         self.contenedor_modulos.pack(side="top", fill="both", expand=True, padx=20, pady=20)
 
+        self.modulo_ambiente = ModuloAmbiente(self.contenedor_modulos)
         self.modulo_gain = ModuloGain(self.contenedor_modulos)
+        self.modulo_datos = ModuloDatos(self.contenedor_modulos)
+
         self.modulo_activo = None
+        self.ultimo_estado_led = None
+        self.ultimo_registro_csv = 0
 
         self.crear_botones_menu()
 
@@ -59,18 +68,43 @@ class MonitorAudioApp:
         self.mqtt.iniciar()
 
     def procesar_dato_recibido(self, valor):
+        estado_led = "verde"
+
         if self.modulo_activo == self.modulo_gain:
             valor_limitado = min(max(valor, 0), 32768)
             angulo = 180 - (valor_limitado / 32768) * 180
 
             if valor >= 25000:
-                estado = "rojo"
+                estado_led = "rojo"
             elif valor >= 15000:
-                estado = "amarillo"
+                estado_led = "amarillo"
             else:
-                estado = "verde"
+                estado_led = "verde"
 
-            self.root.after(0, self.modulo_gain.actualizar_estado, estado, angulo)
+            self.root.after(0, self.modulo_gain.actualizar_estado, estado_led, angulo)
+
+        elif self.modulo_activo == self.modulo_ambiente and self.modulo_ambiente.midiendo:
+            if valor >= 6000:
+                estado_led = "rojo"
+                txt_estado = "Ruidoso"
+            elif valor >= 2500:
+                estado_led = "amarillo"
+                txt_estado = "Moderado"
+            else:
+                estado_led = "verde"
+                txt_estado = "Óptimo"
+
+            self.root.after(0, self.modulo_ambiente.actualizar_lectura, valor)
+
+            if time.time() - self.ultimo_registro_csv >= 1.0:
+                dbfs = 20 * math.log10(max(valor, 1) / 32768.0)
+                self.root.after(0, self.modulo_datos.registrar_dato, self.modulo_ambiente.dimensiones, valor, dbfs,
+                                txt_estado)
+                self.ultimo_registro_csv = time.time()
+
+        if estado_led != self.ultimo_estado_led:
+            self.mqtt.publicar("estudio/monitor/leds", estado_led)
+            self.ultimo_estado_led = estado_led
 
     def crear_botones_menu(self):
         self.btn_ambiente = BotonRedondeado(self.frame_menu, text="1. Ruido Ambiental",
@@ -89,11 +123,17 @@ class MonitorAudioApp:
         if self.modulo_activo:
             self.modulo_activo.ocultar()
 
-        if nombre_modulo == "gain":
+        if nombre_modulo == "ambiente":
+            self.modulo_ambiente.mostrar()
+            self.modulo_activo = self.modulo_ambiente
+            self.ultimo_estado_led = None
+        elif nombre_modulo == "gain":
             self.modulo_gain.mostrar()
             self.modulo_activo = self.modulo_gain
-        else:
-            print(f"Módulo '{nombre_modulo}' no implementado aún.")
+            self.ultimo_estado_led = None
+        elif nombre_modulo == "datos":
+            self.modulo_datos.mostrar()
+            self.modulo_activo = self.modulo_datos
 
 
 if __name__ == "__main__":

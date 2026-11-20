@@ -3,58 +3,53 @@ import math
 
 
 class ModuloGain:
-    def __init__(self, parent_frame):
-        self.frame = tk.Frame(parent_frame, bg="#121212")
+    def __init__(self, parent):
+        self.frame = tk.Frame(parent, bg="#121212")
 
-        tk.Label(self.frame, text="MEDIDOR DE GANANCIA (VU METER)",
-                 font=("Arial", 14, "bold"), fg="#FFFFFF", bg="#121212").pack(pady=20)
+        self.lbl_titulo = tk.Label(self.frame, text="MEDIDOR DE GANANCIA (VU METER)", font=("Arial", 14, "bold"),
+                                   bg="#121212", fg="white")
+        self.lbl_titulo.pack(pady=(30, 20))
 
-        self.canvas_medidor = tk.Canvas(self.frame, width=300, height=160, bg="#121212", highlightthickness=0)
-        self.canvas_medidor.pack(pady=10)
+        self.canvas = tk.Canvas(self.frame, width=400, height=200, bg="#121212", highlightthickness=0)
+        self.canvas.pack()
 
-        self.canvas_medidor.create_arc(20, 20, 280, 280, start=140, extent=40, outline="#FF0000", width=15, style="arc")
-        self.canvas_medidor.create_arc(20, 20, 280, 280, start=105, extent=35, outline="#FFFF00", width=15, style="arc")
-        self.canvas_medidor.create_arc(20, 20, 280, 280, start=75, extent=30, outline="#00FF00", width=15, style="arc")
-        self.canvas_medidor.create_arc(20, 20, 280, 280, start=40, extent=35, outline="#FFFF00", width=15, style="arc")
-        self.canvas_medidor.create_arc(20, 20, 280, 280, start=0, extent=40, outline="#FF0000", width=15, style="arc")
+        self.canvas.create_arc(50, 50, 350, 350, start=0, extent=60, outline="#FF1744", width=25, style="arc")
+        self.canvas.create_arc(50, 50, 350, 350, start=60, extent=60, outline="#FFEA00", width=25, style="arc")
+        self.canvas.create_arc(50, 50, 350, 350, start=120, extent=60, outline="#00E676", width=25, style="arc")
 
-        self.aguja = self.canvas_medidor.create_line(150, 150, 150, 40, fill="#FFFFFF", width=3, arrow=tk.LAST)
-        self.canvas_medidor.create_oval(140, 140, 160, 160, fill="#333333", outline="#555555")
+        self.centro_x = 200
+        self.centro_y = 200
+        self.largo_aguja = 130
 
-        self.frame_luces = tk.Frame(self.frame, bg="#1E1E1E", bd=2, relief="sunken", padx=20, pady=10)
-        self.frame_luces.pack(pady=10)
+        self.aguja = self.canvas.create_line(self.centro_x, self.centro_y, self.centro_x - self.largo_aguja,
+                                             self.centro_y, fill="white", width=3, arrow=tk.LAST)
+        self.base_aguja = self.canvas.create_oval(self.centro_x - 12, self.centro_y - 12, self.centro_x + 12,
+                                                  self.centro_y + 12, fill="#555555", outline="#333333")
 
-        self.luz_roja = tk.Canvas(self.frame_luces, width=40, height=40, bg="#1E1E1E", highlightthickness=0)
-        self.luz_roja.pack(side="left", padx=15)
-        self.id_roja = self.luz_roja.create_oval(5, 5, 35, 35, fill="#440000", outline="#220000")
+        self.frame_semaforo = tk.Frame(self.frame, bg="#121212")
+        self.frame_semaforo.pack(pady=10)
 
-        self.luz_amarilla = tk.Canvas(self.frame_luces, width=40, height=40, bg="#1E1E1E", highlightthickness=0)
-        self.luz_amarilla.pack(side="left", padx=15)
-        self.id_amarilla = self.luz_amarilla.create_oval(5, 5, 35, 35, fill="#444400", outline="#222200")
+        self.canvas_sem = tk.Canvas(self.frame_semaforo, width=200, height=60, bg="#121212", highlightthickness=1,
+                                    highlightbackground="#333333")
+        self.canvas_sem.pack()
 
-        self.luz_verde = tk.Canvas(self.frame_luces, width=40, height=40, bg="#1E1E1E", highlightthickness=0)
-        self.luz_verde.pack(side="left", padx=15)
-        self.id_verde = self.luz_verde.create_oval(5, 5, 35, 35, fill="#004400", outline="#002200")
+        self.luz_verde = self.canvas_sem.create_oval(30, 15, 60, 45, fill="#003300", outline="")
+        self.luz_amarilla = self.canvas_sem.create_oval(85, 15, 115, 45, fill="#333300", outline="")
+        self.luz_roja = self.canvas_sem.create_oval(140, 15, 170, 45, fill="#330000", outline="")
+
+    def actualizar_estado(self, estado, angulo):
+        rad = math.radians(angulo)
+        x = self.centro_x + self.largo_aguja * math.cos(rad)
+        y = self.centro_y - self.largo_aguja * math.sin(rad)
+
+        self.canvas.coords(self.aguja, self.centro_x, self.centro_y, x, y)
+
+        self.canvas_sem.itemconfig(self.luz_verde, fill="#00E676" if estado == "verde" else "#003300")
+        self.canvas_sem.itemconfig(self.luz_amarilla, fill="#FFEA00" if estado == "amarillo" else "#333300")
+        self.canvas_sem.itemconfig(self.luz_roja, fill="#FF1744" if estado == "rojo" else "#330000")
 
     def mostrar(self):
         self.frame.pack(fill="both", expand=True)
 
     def ocultar(self):
         self.frame.pack_forget()
-
-    def actualizar_estado(self, estado, angulo):
-        rad = math.radians(angulo)
-        x2 = 150 + 110 * math.cos(rad)
-        y2 = 150 - 110 * math.sin(rad)
-        self.canvas_medidor.coords(self.aguja, 150, 150, x2, y2)
-
-        self.luz_roja.itemconfig(self.id_roja, fill="#440000")
-        self.luz_amarilla.itemconfig(self.id_amarilla, fill="#444400")
-        self.luz_verde.itemconfig(self.id_verde, fill="#004400")
-
-        if estado == "rojo":
-            self.luz_roja.itemconfig(self.id_roja, fill="#FF0000")
-        elif estado == "amarillo":
-            self.luz_amarilla.itemconfig(self.id_amarilla, fill="#FFFF00")
-        elif estado == "verde":
-            self.luz_verde.itemconfig(self.id_verde, fill="#00FF00")
